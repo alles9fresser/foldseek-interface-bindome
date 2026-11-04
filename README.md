@@ -221,6 +221,12 @@ Per cluster: designed only, natural only, or both.
 
 ## Cluster size distribution
 
+![cluster statistics](figures/cluster_stats.png)
+
+*Left:* how many clusters of each size, by composition. *Middle:* the same
+sizes ranked, which shows the tail without binning. *Right:* one point per
+cluster containing both sources, dashed line is 1:1.
+
 ```
 size      designed   natural   both     total
 1           25,060    21,024      0    46,084
@@ -248,15 +254,70 @@ of the same subunit contact. Designs form no equivalent.
 
 ---
 
-## Interpreting the number
+## Mixing against chance
 
-3.57% is uninterpretable on its own, because the maximum achievable rate is not
-100%. The control is to run the identical experiment with natural interfaces on
-**both** sides, split so the two halves share no protein. That split matters:
-without it, most matches are two depositions of the same complex — a match a de
-novo design can never produce.
+![mixing vs chance](figures/mixing_vs_chance.png)
 
-At the same thresholds, on a smaller sample:
+The pool is 50.04% Bindome. If the two labels were shuffled across cluster
+members, two-thirds of multi-member clusters would contain both. Observed is
+4.3% — 15× below chance, and the gap widens with cluster size.
+
+This null is computed from the run itself and needs no external comparison.
+
+---
+
+## Ceiling control — *designed, not yet run*
+
+3.57% cannot be read on its own, because the maximum achievable rate is nowhere
+near 100%. In a 47k sample, 81.3% of the natural interface clusters present
+contribute exactly one structure, so most structures have no possible partner
+in the pool at all. That is a property of sampling density in interface space,
+not of either source.
+
+The control is to run the identical experiment with **natural interfaces on
+both sides**.
+
+### Procedure
+
+1. **Eligible rows.** The same 189,830 rows with `dimerrep == 1` that the main
+   run sampled from.
+
+2. **Split the proteins.** Read `uniprot_ids` (`P09211-P01100`). Drop the 2,351
+   rows without two usable accessions. Take the distinct accessions, shuffle
+   with a fixed seed, deal into two lists. A row joins side A if both its
+   proteins are in list 1, side B if both are in list 2, and is discarded if
+   its proteins landed on opposite lists.
+
+   ```
+   usable rows   156,109
+   side A pool    54,504
+   side B pool    65,552
+   discarded      36,053
+   ```
+
+   The split matters. Without it, most A–B matches are two depositions of the
+   same complex — a match a de novo design can never produce, so counting them
+   would measure the ceiling against something the designs are excluded from.
+
+3. **Sample** 47,178 per side, matching the main run's n. Side A is the tight
+   one at 87% of its pool; a different shuffle seed can put it below 47,178, in
+   which case both arms need re-running at a matching smaller n.
+
+4. **Stage** exactly as step 6 of the main run, writing `XA<row>C<cluster>.cif`
+   and `XB<row>C<cluster>.cif`. About 41% of the assemblies are already cached
+   from the main run; ~22,700 remain to fetch.
+
+5. **Cluster** with the identical command and flags.
+
+6. **Count** clusters containing at least one `XA` and one `XB`.
+
+   ```
+   ceiling = XA members in a mixed cluster / all XA members
+   ```
+
+### Reference values
+
+From an earlier run of this control at smaller n:
 
 | interface TM | designs vs natural | natural vs natural | ratio |
 |---|---|---|---|
@@ -265,17 +326,24 @@ At the same thresholds, on a smaller sample:
 | 0.25 | 7.38% | 17.23% | 2.3× |
 | 0.2 | 13.74% | 28.81% | 2.1× |
 
-Loosening the threshold raises both columns, so a bare cross-source number at a
-looser cutoff means nothing. The ratio narrows from 11× to 2.1×, but designs
-never reach parity.
+Loosening the threshold raises both columns, so a cross-source number at a
+looser cutoff is meaningless without its own ceiling. The ratio narrows from
+11× to 2.1×, but designs never reach parity.
 
-Both numbers are low for the same structural reason: in a 47k sample, 81.3% of
-the natural interface clusters present contribute exactly one structure, so
-most structures have no possible partner in the pool. This is a property of
-sampling density in interface space, not of either source.
+The Foldseek-Interface benchmark found TM 0.3 optimal; 0.4 was used for the
+full PDB clustering. 0.25 and 0.2 are below anything that was benchmarked.
 
-The authors' own benchmark found TM 0.3 optimal; 0.4 was used for the full PDB
-clustering. 0.25 and 0.2 are below anything they tested.
+### Caveat
+
+The ceiling arm enforces protein-disjointness; the main run does not. A design
+against target P09211 is free to co-cluster with a natural interface involving
+P09211. The ceiling is therefore the stricter test, and 5.62% is a conservative
+estimate of the maximum.
+
+### Cost
+
+~22,700 assemblies to fetch, ~35 min staging, one clustering run per threshold
+at several hours and ~580 GB scratch each. Nothing in the main run is touched.
 
 ---
 
