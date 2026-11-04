@@ -65,17 +65,39 @@ versions, including bioconda's, do not have `createinterfacedb`.
 
 ## Procedure
 
-### 1. Extract the designed complexes
+Steps 1-4 prepare the Bindome side, step 6 prepares the
+Foldseek-Interface PDB side, and steps 5 and 7-9 act on both.
 
-Each archive in `structures/` holds 102 members for one target: the apo target,
-the apo domain, and 50 complex / 50 apo-binder pairs. Only the complexes are
-needed. `metadata.csv` names them in `target_binder_complex_pdb_path`.
+### 1. Extract the designed complexes  —  *Bindome*
+
+The HumanBindome download is an index plus sealed archives — nothing is
+pre-extracted:
+
+```
+HumanBindome/
+  metadata.csv                     306,137 rows
+  structures/A0/A0A024RBG1.tar     8,296 archives, binned by the first
+  structures/A0/A0A075B6H7.tar     two characters of the UniProt id
+```
+
+Each archive holds 102 members for one target: the apo target, the apo domain,
+and 50 complex / apo-binder pairs. Only the complexes are needed, and
+`metadata.csv` names them in `target_binder_complex_pdb_path`.
+
+```
+A0A024RBG1.tar
+├── A0A024RBG1.pdb                          apo target
+└── A0A024RBG1_DOMAIN1/
+    ├── A0A024RBG1_DOMAIN1.pdb              apo domain
+    └── <design>/<design>.pdb               the complex          <- wanted
+        <design>/<design>_binder_alone.pdb  apo binder
+```
 
 ```
 306,137 two-chain complexes
 ```
 
-### 2. Build chain and dimer databases
+### 2. Build chain and dimer databases  —  *Bindome*
 
 ```bash
 foldseek createdb      complexes/ chains
@@ -87,7 +109,7 @@ foldseek createdimerdb chains dimers tmp \
 612,274 chains → 306,137 dimers
 ```
 
-### 3. Deduplicate the designs
+### 3. Deduplicate the designs  —  *Bindome*
 
 Sister ProteinMPNN variants from the same seed share a backbone and are
 redundant. TM 0.9 is strict enough that genuinely distinct interfaces never
@@ -105,7 +127,7 @@ foldseek createtsv dimers dimers dedup dedup_cluster.tsv
 306,137 designs → 188,710 representatives   (62% retention, ~2.7 h)
 ```
 
-### 4. Build representative interfaces
+### 4. Build representative interfaces  —  *Bindome*
 
 Rebuild from the representatives' source PDB files, then sever.
 
@@ -127,7 +149,7 @@ foldseek createinterfacedb rep_dimer rep_int  <interface flags>
 > exit code 0 and no warning. Rebuilding from the source structures avoids this.
 > Worth checking the count explicitly whichever route is taken.
 
-### 5. Sample both sides
+### 5. Sample both sides  —  *Bindome + Foldseek-Interface PDB*
 
 **Designed:** 47,178 of the 188,710 representatives, uniform.
 
@@ -145,7 +167,7 @@ would inflate mixing for reasons unrelated to the designs.
 spanning 25,884 distinct natural interface clusters
 ```
 
-### 6. Fetch and cut the natural interfaces
+### 6. Fetch and cut the natural interfaces  —  *Foldseek-Interface PDB*
 
 Each sampled row names an assembly and two chains. Assemblies are downloaded,
 then the two named chains are written to their own file.
@@ -158,7 +180,7 @@ then the two named chains are written to their own file.
 mmCIF column order is not fixed, so `auth_asym_id` is located per file rather
 than by index.
 
-### 7. Stage one pool
+### 7. Stage one pool  —  *both*
 
 ```
 pool/
@@ -169,7 +191,7 @@ pool/
 The `W` prefix is the only thing distinguishing the sources downstream; design
 names always contain `no_hotspot`, so the two cannot collide.
 
-### 8. Build interfaces and cluster
+### 8. Build interfaces and cluster  —  *both*
 
 ```bash
 foldseek createdb          pool/ pooldb
@@ -191,7 +213,7 @@ clustered is the interface, not the parent fold.
 94,286 interfaces → 58,614 clusters
 ```
 
-### 9. Count
+### 9. Count  —  *both*
 
 Per cluster: designed only, natural only, or both.
 
