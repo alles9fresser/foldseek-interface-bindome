@@ -30,20 +30,38 @@ designs sharing a cluster with a natural interface:  3.57%
 **96.4% of designed interfaces land in a cluster containing no natural
 interface at all.**
 
-Restricting to clusters with at least two members and comparing against a
-null where source labels are shuffled across members:
+### Cluster size distribution
 
-| cluster size | observed mixed | expected if random |
-|---|---|---|
-| 2 | 1.6% | 50.0% |
-| 3 | 4.3% | 75.0% |
-| 6 | 9.6% | 96.9% |
-| 10 | 22.2% | 99.8% |
-| **all ≥2** | **4.3%** | **66.7%** |
+![cluster statistics](figures/cluster_stats.png)
 
-The pool is 50.04% designed, so chance alone would put both sources in
-two-thirds of multi-member clusters. Observed is 15× below that. Designed and
-natural interfaces do not merely fail to mix — they segregate.
+*Left:* how many clusters of each size, by composition. *Middle:* the same
+sizes ranked, which shows the tail without binning. *Right:* one point per
+cluster containing both sources, dashed line is 1:1.
+
+```
+size      designed   natural   both     total
+1           25,060    21,024      0    46,084
+2            3,702     2,683    101     6,486
+3-4          2,392     1,525    193     4,110
+5-9            710       641    162     1,513
+10-49           65       247     76       388
+50+              1        29      3        33
+```
+
+78.6% singletons. Largest cluster 2,056 members, all natural.
+
+Two features worth noting.
+
+**Mixed clusters are concentrated at larger sizes** — none at size 1, 1.6% at
+size 2, 20% at size 10–49. A cluster must be reasonably large before it can
+contain both, so the 3.57% is partly a statement about cluster size.
+
+**The two arms have different size profiles.** The designed side has one
+cluster above 50 members; the natural side has 29, including a 2,056-member
+one. The largest natural clusters are near-duplicate families — amyloid
+fibrils (`IC33341`, 10,996 members in the catalogue), gas vesicle protein,
+viral capsids — where a single deposited structure contains hundreds of copies
+of the same subunit contact. Designs form no equivalent.
 
 ---
 
@@ -219,54 +237,7 @@ Per cluster: designed only, natural only, or both.
 
 ---
 
-## Cluster size distribution
-
-![cluster statistics](figures/cluster_stats.png)
-
-*Left:* how many clusters of each size, by composition. *Middle:* the same
-sizes ranked, which shows the tail without binning. *Right:* one point per
-cluster containing both sources, dashed line is 1:1.
-
-```
-size      designed   natural   both     total
-1           25,060    21,024      0    46,084
-2            3,702     2,683    101     6,486
-3-4          2,392     1,525    193     4,110
-5-9            710       641    162     1,513
-10-49           65       247     76       388
-50+              1        29      3        33
-```
-
-78.6% singletons. Largest cluster 2,056 members, all natural.
-
-Two features worth noting.
-
-**Mixed clusters are concentrated at larger sizes** — none at size 1, 1.6% at
-size 2, 20% at size 10–49. A cluster must be reasonably large before it can
-contain both, so the 3.57% is partly a statement about cluster size.
-
-**The two arms have different size profiles.** The designed side has one
-cluster above 50 members; the natural side has 29, including a 2,056-member
-one. The largest natural clusters are near-duplicate families — amyloid
-fibrils (`IC33341`, 10,996 members in the catalogue), gas vesicle protein,
-viral capsids — where a single deposited structure contains hundreds of copies
-of the same subunit contact. Designs form no equivalent.
-
----
-
-## Mixing against chance
-
-![mixing vs chance](figures/mixing_vs_chance.png)
-
-The pool is 50.04% Bindome. If the two labels were shuffled across cluster
-members, two-thirds of multi-member clusters would contain both. Observed is
-4.3% — 15× below chance, and the gap widens with cluster size.
-
-This null is computed from the run itself and needs no external comparison.
-
----
-
-## Ceiling control — *designed, not yet run*
+## Ceiling control — *needs re-running at this n*
 
 3.57% cannot be read on its own, because the maximum achievable rate is nowhere
 near 100%. In a 47k sample, 81.3% of the natural interface clusters present
